@@ -1,6 +1,7 @@
 import type { RgbColor, TerminalColors, TUI } from "@earendil-works/pi-tui";
 import type { SettingsManager } from "../../../core/settings-manager.ts";
 import {
+	DEFAULT_THEME_SETTING,
 	getTerminalTheme,
 	initTheme,
 	markTerminalColorsPending,
@@ -101,10 +102,10 @@ export class InteractiveThemeController {
 	 * Theme pairs and the system theme follow terminal appearance changes.
 	 */
 	applyFromSettings(): void {
-		const themeSetting = this.getThemeSetting();
+		const themeSetting = this.getThemeSetting() ?? DEFAULT_THEME_SETTING;
 		const themeName = this.resolveThemeName();
 		this.setAutoSync(parseAutoThemeSetting(themeSetting) !== undefined || themeName === SYSTEM_THEME_NAME);
-		this.applyThemeName(themeName, themeSetting !== undefined);
+		this.applyThemeName(themeName, themeSetting !== DEFAULT_THEME_SETTING);
 		this.queryTerminalColors();
 	}
 
@@ -118,7 +119,7 @@ export class InteractiveThemeController {
 	}
 
 	getThemeSelection(): string | undefined {
-		return this.currentThemeSetting ?? this.getSettingsManager().getThemeSetting() ?? this.activeThemeName;
+		return this.currentThemeSetting ?? this.getSettingsManager().getThemeSetting() ?? DEFAULT_THEME_SETTING;
 	}
 
 	setThemeName(themeName: string, showError = false): ThemeResult {
@@ -170,9 +171,11 @@ export class InteractiveThemeController {
 		return this.currentThemeSetting ?? this.getSettingsManager().getThemeSetting();
 	}
 
-	/** The theme for the current setting and terminal appearance. Without a setting, pi uses the system theme. */
+	/** The theme for the current setting and terminal appearance. Without a setting, Pi uses the built-in palette pair. */
 	private resolveThemeName(): string {
-		return resolveThemeSetting(this.getThemeSetting(), getTerminalTheme()) ?? SYSTEM_THEME_NAME;
+		return (
+			resolveThemeSetting(this.getThemeSetting() ?? DEFAULT_THEME_SETTING, getTerminalTheme()) ?? SYSTEM_THEME_NAME
+		);
 	}
 
 	private applyThemeName(themeName: string, showError = false): ThemeResult {

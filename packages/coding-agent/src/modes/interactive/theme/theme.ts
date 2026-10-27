@@ -40,6 +40,9 @@ import {
 
 export { SYSTEM_THEME_NAME } from "./system-theme.ts";
 
+/** Default to the Makima palette pair while preserving the adaptive system theme as an explicit option. */
+export const DEFAULT_THEME_SETTING = "light/dark";
+
 // ============================================================================
 // Types & Schema
 // ============================================================================
@@ -680,7 +683,7 @@ export function setRegisteredThemes(themes: Theme[]): void {
 }
 
 export function initTheme(themeName?: string, enableWatcher: boolean = false): void {
-	const name = themeName ?? SYSTEM_THEME_NAME;
+	const name = resolveThemeSetting(themeName ?? DEFAULT_THEME_SETTING, getTerminalTheme()) ?? SYSTEM_THEME_NAME;
 	currentThemeName = name;
 	try {
 		setGlobalTheme(loadTheme(name));

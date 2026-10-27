@@ -1,7 +1,7 @@
 import { Container, getKeybindings, Spacer, Text } from "@earendil-works/pi-tui";
 import { APP_NAME } from "../../../config.ts";
 import { SYSTEM_THEME_NAME } from "../theme/system-theme.ts";
-import { theme } from "../theme/theme.ts";
+import { DEFAULT_THEME_SETTING, theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 import { keyHint, rawKeyHint } from "./keybinding-hints.ts";
 
@@ -17,9 +17,10 @@ export interface FirstTimeSetupOptions {
 }
 
 const THEME_OPTIONS: Array<{ value: string; label: string }> = [
+	{ value: DEFAULT_THEME_SETTING, label: "Makima (adapts to terminal light/dark mode)" },
+	{ value: "dark", label: "Makima Dark" },
+	{ value: "light", label: "Makima Light" },
 	{ value: SYSTEM_THEME_NAME, label: "System (matches your terminal colors)" },
-	{ value: "dark", label: "Dark" },
-	{ value: "light", label: "Light" },
 ];
 
 const ANALYTICS_OPTIONS: Array<{ value: boolean; label: string }> = [

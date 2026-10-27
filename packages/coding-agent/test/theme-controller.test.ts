@@ -127,6 +127,21 @@ describe("InteractiveThemeController", () => {
 		expect(theme.name).toBe("dark");
 	});
 
+	it("follows terminal appearance with the default palette pair", async () => {
+		const { ui, queryTerminalColors, setTerminalColorSchemeNotifications, emitTerminalColorScheme } = createUi();
+		queryTerminalColors.mockResolvedValue(LIGHT);
+		const controller = createController(ui, () => SettingsManager.inMemory());
+		controller.applyFromSettings();
+		expect(setTerminalColorSchemeNotifications).toHaveBeenCalledWith(true);
+		await flush();
+		expect(theme.name).toBe("light");
+
+		queryTerminalColors.mockResolvedValue(DARK);
+		emitTerminalColorScheme("dark");
+		await flush();
+		expect(theme.name).toBe("dark");
+	});
+
 	it("uses the reported scheme for the system theme when the terminal reports no colors", async () => {
 		vi.stubEnv("COLORFGBG", "");
 		const { ui, emitTerminalColorScheme } = createUi();

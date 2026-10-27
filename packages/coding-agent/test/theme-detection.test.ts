@@ -1,8 +1,10 @@
 import { resetCapabilitiesCache, setCapabilities } from "@earendil-works/pi-tui";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+	DEFAULT_THEME_SETTING,
 	detectColorFgBgTheme,
 	detectTerminalTheme,
+	getResolvedThemeColors,
 	getThemeByName,
 	parseAutoThemeSetting,
 	resolveThemeSetting,
@@ -66,5 +68,29 @@ describe("theme setting helpers", () => {
 		expect(resolveThemeSetting("light/dark", "light")).toBe("light");
 		expect(resolveThemeSetting("light/dark", "dark")).toBe("dark");
 		expect(resolveThemeSetting("light/dark/extra", "dark")).toBeUndefined();
+	});
+
+	it("defaults to the built-in light and dark palette pair", () => {
+		expect(DEFAULT_THEME_SETTING).toBe("light/dark");
+		expect(resolveThemeSetting(DEFAULT_THEME_SETTING, "light")).toBe("light");
+		expect(resolveThemeSetting(DEFAULT_THEME_SETTING, "dark")).toBe("dark");
+	});
+});
+
+describe("Makima palettes", () => {
+	it("maps the characteristic dark palette colors to Pi semantic tokens", () => {
+		const colors = getResolvedThemeColors("dark");
+		expect(colors.accent).toBe("#ff79c6");
+		expect(colors.mdLink).toBe("#59d9ff");
+		expect(colors.warning).toBe("#f8e45c");
+		expect(colors.selectedBg).toBe("#263859");
+	});
+
+	it("maps the characteristic light palette colors to Pi semantic tokens", () => {
+		const colors = getResolvedThemeColors("light");
+		expect(colors.accent).toBe("#c5297a");
+		expect(colors.mdLink).toBe("#007a99");
+		expect(colors.warning).toBe("#806700");
+		expect(colors.selectedBg).toBe("#cde9f2");
 	});
 });
