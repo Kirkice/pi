@@ -62,7 +62,8 @@ describe("Durable Object SQLite driver in workerd", () => {
 			await database.exec("CREATE INDEX probe_path ON probe (path, id)");
 			await database.exec("CREATE INDEX probe_n ON probe (n, id)");
 			for (let i = 0; i < 10; i++) await database.run("INSERT INTO probe VALUES (?, ?, ?)", `k${i}`, `a/${i}`, i);
-			expect(await database.runCounted("INSERT INTO probe VALUES (?, ?, ?)", "x", "a/x", 99)).toBe(1);
+			// Outside the bulk statements' range below.
+			expect(await database.runCounted("INSERT INTO probe VALUES (?, ?, ?)", "x", "b/x", 99)).toBe(1);
 			expect(await database.runCounted("UPDATE probe SET n = 0 WHERE id = ?", "absent")).toBe(0);
 			expect(
 				await database.runCounted("UPDATE probe SET path = 'c/' || substr(path, 3) WHERE path >= 'a/' AND path < 'a0'"),
