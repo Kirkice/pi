@@ -44,6 +44,7 @@ export const SETTINGS_DEFAULTS = {
 	},
 	doubleEscapeAction: "tree",
 	treeFilterMode: "default",
+	showHardwareCursor: true,
 	editorPaddingX: 0,
 	outputPad: 1,
 	autocompleteMaxVisible: 5,

@@ -352,6 +352,26 @@ describe("SettingsManager", () => {
 		});
 	});
 
+	describe("hardware cursor", () => {
+		it("uses the terminal-native cursor by default and honors explicit overrides", () => {
+			const previous = process.env.PI_HARDWARE_CURSOR;
+			try {
+				delete process.env.PI_HARDWARE_CURSOR;
+				expect(SettingsManager.inMemory().getShowHardwareCursor()).toBe(true);
+				expect(SettingsManager.inMemory({ showHardwareCursor: false }).getShowHardwareCursor()).toBe(false);
+
+				process.env.PI_HARDWARE_CURSOR = "0";
+				expect(SettingsManager.inMemory({ showHardwareCursor: true }).getShowHardwareCursor()).toBe(false);
+
+				process.env.PI_HARDWARE_CURSOR = "1";
+				expect(SettingsManager.inMemory({ showHardwareCursor: false }).getShowHardwareCursor()).toBe(true);
+			} finally {
+				if (previous === undefined) delete process.env.PI_HARDWARE_CURSOR;
+				else process.env.PI_HARDWARE_CURSOR = previous;
+			}
+		});
+	});
+
 	describe("terminal capability overrides", () => {
 		it("maps explicit values and omits auto values", () => {
 			const getOverrides = (terminal: NonNullable<Settings["terminal"]>) =>

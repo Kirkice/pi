@@ -381,7 +381,10 @@ export const SettingsSchema = Type.Object(
 			}),
 		),
 		showHardwareCursor: Type.Optional(
-			Type.Boolean({ description: "Show the terminal cursor while still positioning it for IME." }),
+			Type.Boolean({
+				description: "Show the terminal's native cursor while still positioning it for IME.",
+				default: SETTINGS_DEFAULTS.showHardwareCursor,
+			}),
 		),
 		markdown: Type.Optional(MarkdownSettingsSchema),
 		warnings: Type.Optional(WarningSettingsSchema),

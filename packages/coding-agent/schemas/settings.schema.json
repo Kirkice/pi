@@ -569,7 +569,8 @@
     },
     "showHardwareCursor": {
       "type": "boolean",
-      "description": "Show the terminal cursor while still positioning it for IME."
+      "description": "Show the terminal's native cursor while still positioning it for IME.",
+      "default": true
     },
     "markdown": {
       "type": "object",

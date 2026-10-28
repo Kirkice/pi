@@ -1376,7 +1376,9 @@ export class SettingsManager {
 	}
 
 	getShowHardwareCursor(): boolean {
-		return this.settings.showHardwareCursor ?? process.env.PI_HARDWARE_CURSOR === "1";
+		if (process.env.PI_HARDWARE_CURSOR === "0") return false;
+		if (process.env.PI_HARDWARE_CURSOR === "1") return true;
+		return this.settings.showHardwareCursor ?? SETTINGS_DEFAULTS.showHardwareCursor;
 	}
 
 	setShowHardwareCursor(enabled: boolean): void {

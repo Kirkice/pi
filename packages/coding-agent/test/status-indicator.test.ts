@@ -17,6 +17,26 @@ describe("status indicators", () => {
 		vi.useRealTimers();
 	});
 
+	it("animates the Makima-style green input prefix while idle", () => {
+		initTheme("dark");
+		vi.useFakeTimers();
+		const requestRender = vi.fn();
+		const tui = { requestRender, terminal: { rows: 10 } } as unknown as TUI;
+		const editor = new CustomEditor(tui, getEditorTheme(), KeybindingsManager.create());
+
+		try {
+			const firstFrame = editor.render(20)[1]!;
+			expect(stripAnsi(firstFrame).startsWith("⠋ ")).toBe(true);
+			expect(firstFrame).toContain(theme.getFgAnsi("success"));
+
+			vi.advanceTimersByTime(90);
+			expect(stripAnsi(editor.render(20)[1]!).startsWith("⠙ ")).toBe(true);
+			expect(requestRender).toHaveBeenCalled();
+		} finally {
+			editor.dispose();
+		}
+	});
+
 	it("keeps idle status at the same height as standalone status indicators", () => {
 		const idleStatus = new IdleStatus();
 
@@ -40,6 +60,7 @@ describe("status indicators", () => {
 		expect(standaloneLine).toContain(theme.getFgAnsi("accent"));
 		expect(standaloneLine).toContain(theme.getFgAnsi("muted"));
 		indicator.dispose();
+		editor.dispose();
 	});
 
 	it("embeds the working indicator when the editor opts in", () => {
@@ -61,6 +82,7 @@ describe("status indicators", () => {
 		expect(visibleWidth(topBorder)).toBe(20);
 		expect(topBorder.split(theme.getFgAnsi("thinkingHigh"))).toHaveLength(5);
 		indicator.dispose();
+		editor.dispose();
 	});
 
 	it("embeds compaction, summary, and retry labels within the border width", () => {
@@ -92,6 +114,7 @@ describe("status indicators", () => {
 			expect(stripAnsi(editor.render(120)[0]!)).toBe("─".repeat(120));
 		} finally {
 			for (const indicator of indicators) indicator.dispose();
+			editor.dispose();
 		}
 	});
 

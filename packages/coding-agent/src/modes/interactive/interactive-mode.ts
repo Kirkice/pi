@@ -7094,6 +7094,7 @@ export class InteractiveMode {
 			this.ui.terminal.setProgress(false);
 		}
 		this.clearStatusIndicator();
+		this.defaultEditor.dispose();
 		this.themeController.disableAutoSync();
 		this.clearExtensionTerminalInputListeners();
 		this.footer.dispose();

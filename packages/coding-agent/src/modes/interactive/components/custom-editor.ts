@@ -1,6 +1,10 @@
 import { Editor, type EditorOptions, type EditorTheme, type TUI, visibleWidth } from "@earendil-works/pi-tui";
 import type { AppKeybinding, KeybindingsManager } from "../../../core/keybindings.ts";
+import { theme } from "../theme/theme.ts";
 import type { StatusIndicator } from "./status-indicator.ts";
+
+const INPUT_SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"] as const;
+const INPUT_SPINNER_INTERVAL_MS = 90;
 
 export type CustomEditorOptions = EditorOptions & {
 	/** Render working, compaction, summarization, and retry status in the editor's top border. */
@@ -13,6 +17,8 @@ export type CustomEditorOptions = EditorOptions & {
 export class CustomEditor extends Editor {
 	private keybindings: KeybindingsManager;
 	private workingStatusIndicator: StatusIndicator | undefined;
+	private inputSpinnerFrame = 0;
+	private inputSpinnerTimer: ReturnType<typeof setInterval> | undefined;
 	public readonly embedWorkingStatus: boolean;
 	public actionHandlers: Map<AppKeybinding, () => void> = new Map();
 
@@ -23,14 +29,45 @@ export class CustomEditor extends Editor {
 	/** Handler for extension-registered shortcuts. Returns true if handled. */
 	public onExtensionShortcut?: (data: string) => boolean;
 
-	constructor(tui: TUI, theme: EditorTheme, keybindings: KeybindingsManager, options?: CustomEditorOptions) {
-		super(tui, theme, options);
+	constructor(tui: TUI, editorTheme: EditorTheme, keybindings: KeybindingsManager, options?: CustomEditorOptions) {
+		super(tui, editorTheme, options);
 		this.keybindings = keybindings;
 		this.embedWorkingStatus = options?.embedWorkingStatus ?? false;
+		this.startInputSpinner();
+	}
+
+	private startInputSpinner(): void {
+		if (this.inputSpinnerTimer) return;
+		this.inputSpinnerTimer = setInterval(() => {
+			this.inputSpinnerFrame = (this.inputSpinnerFrame + 1) % INPUT_SPINNER_FRAMES.length;
+			this.tui.requestRender();
+		}, INPUT_SPINNER_INTERVAL_MS);
+	}
+
+	private stopInputSpinner(): void {
+		if (!this.inputSpinnerTimer) return;
+		clearInterval(this.inputSpinnerTimer);
+		this.inputSpinnerTimer = undefined;
+	}
+
+	dispose(): void {
+		this.stopInputSpinner();
 	}
 
 	setWorkingStatusIndicator(indicator: StatusIndicator | undefined): void {
 		this.workingStatusIndicator = indicator;
+		if (indicator) this.stopInputSpinner();
+		else this.startInputSpinner();
+	}
+
+	protected override getInputPrefixWidth(): number {
+		return 2;
+	}
+
+	protected override renderInputPrefix(row: number, width: number): string {
+		if (width === 0) return "";
+		const glyph = row === 0 ? (INPUT_SPINNER_FRAMES[this.inputSpinnerFrame] ?? "⠋") : " ";
+		return theme.fg("success", glyph) + " ".repeat(Math.max(0, width - 1));
 	}
 
 	protected override renderTopBorder(width: number, hiddenLineCount: number): string {
