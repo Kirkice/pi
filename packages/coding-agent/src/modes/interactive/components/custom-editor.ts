@@ -33,7 +33,6 @@ export class CustomEditor extends Editor {
 		super(tui, editorTheme, options);
 		this.keybindings = keybindings;
 		this.embedWorkingStatus = options?.embedWorkingStatus ?? false;
-		this.startInputSpinner();
 	}
 
 	private startInputSpinner(): void {
@@ -56,8 +55,16 @@ export class CustomEditor extends Editor {
 
 	setWorkingStatusIndicator(indicator: StatusIndicator | undefined): void {
 		this.workingStatusIndicator = indicator;
-		if (indicator) this.stopInputSpinner();
+		if (indicator || !this.focused) this.stopInputSpinner();
 		else this.startInputSpinner();
+	}
+
+	override render(width: number): string[] {
+		// Animate only while this editor owns focus. Hidden/replaced editors must not
+		// keep the process awake or continuously request terminal redraws.
+		if (this.focused && !this.workingStatusIndicator) this.startInputSpinner();
+		else this.stopInputSpinner();
+		return super.render(width);
 	}
 
 	protected override getInputPrefixWidth(): number {

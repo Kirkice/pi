@@ -88,9 +88,11 @@ export async function createStartupTui(settingsManager: SettingsManager): Promis
 	setRegisteredThemes(await loadStartupThemes(settingsManager));
 	// The system theme starts in grayscale until the terminal reports its colors.
 	markTerminalColorsPending();
+	const configuredTheme = settingsManager.getThemeSetting();
 	initTheme(
-		resolveThemeSetting(settingsManager.getThemeSetting() ?? DEFAULT_THEME_SETTING, getTerminalTheme()) ??
-			SYSTEM_THEME_NAME,
+		configuredTheme === undefined
+			? SYSTEM_THEME_NAME
+			: (resolveThemeSetting(configuredTheme, getTerminalTheme()) ?? SYSTEM_THEME_NAME),
 	);
 	setKeybindings(KeybindingsManager.create());
 	const ui: TUI = new TuiMainScreen(new ProcessTerminal(), settingsManager.getShowHardwareCursor(), getAgentDir());

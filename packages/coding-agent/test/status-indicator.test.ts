@@ -23,6 +23,7 @@ describe("status indicators", () => {
 		const requestRender = vi.fn();
 		const tui = { requestRender, terminal: { rows: 10 } } as unknown as TUI;
 		const editor = new CustomEditor(tui, getEditorTheme(), KeybindingsManager.create());
+		editor.focused = true;
 
 		try {
 			const firstFrame = editor.render(20)[1]!;
@@ -32,6 +33,22 @@ describe("status indicators", () => {
 			vi.advanceTimersByTime(90);
 			expect(stripAnsi(editor.render(20)[1]!).startsWith("⠙ ")).toBe(true);
 			expect(requestRender).toHaveBeenCalled();
+		} finally {
+			editor.dispose();
+		}
+	});
+
+	it("does not animate a hidden or unfocused editor", () => {
+		initTheme("dark");
+		vi.useFakeTimers();
+		const requestRender = vi.fn();
+		const tui = { requestRender, terminal: { rows: 10 } } as unknown as TUI;
+		const editor = new CustomEditor(tui, getEditorTheme(), KeybindingsManager.create());
+
+		try {
+			editor.render(20);
+			vi.advanceTimersByTime(1000);
+			expect(requestRender).not.toHaveBeenCalled();
 		} finally {
 			editor.dispose();
 		}

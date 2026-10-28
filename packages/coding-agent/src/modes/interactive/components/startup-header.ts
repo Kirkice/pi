@@ -221,12 +221,14 @@ export class StartupHeader implements Component {
 				lines.push(`${theme.fg("border", "│")}${fitLine(` ${line}`, innerWidth)}${theme.fg("border", "│")}`);
 		}
 
-		if (this.expanded && help.length > 0) {
+		if (help.length > 0) {
 			lines.push(
 				`${theme.fg("border", "├")}${theme.fg("borderMuted", "─".repeat(innerWidth))}${theme.fg("border", "┤")}`,
 			);
-			for (const line of help)
-				lines.push(`${theme.fg("border", "│")}${fitLine(` ${line}`, innerWidth)}${theme.fg("border", "│")}`);
+			const helpLines = this.expanded ? help : [help.filter((line) => line.trim().length > 0).join("  ")];
+			for (const line of helpLines)
+				for (const wrapped of wrapTextWithAnsi(line, Math.max(1, innerWidth - 2)))
+					lines.push(`${theme.fg("border", "│")}${fitLine(` ${wrapped}`, innerWidth)}${theme.fg("border", "│")}`);
 		}
 		lines.push(bottom);
 		return lines;

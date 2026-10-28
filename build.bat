@@ -25,8 +25,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo Installing or updating dependencies...
-call npm install --ignore-scripts
+echo Installing dependencies from package-lock.json...
+call npm ci
 if errorlevel 1 goto :failed
 
 echo.

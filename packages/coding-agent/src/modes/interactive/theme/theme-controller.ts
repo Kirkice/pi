@@ -84,8 +84,10 @@ export class InteractiveThemeController {
 		this.showError = options.showError;
 		this.onChanged = options.onChanged;
 		this.currentThemeSetting = options.initialThemeSetting;
-		this.activeThemeName = this.resolveThemeName();
-		// The system theme starts in grayscale; color follows once the terminal reports its colors.
+		const configuredTheme = this.getThemeSetting();
+		// Preserve the system theme's grayscale/ANSI startup fallback until terminal
+		// colors arrive. An explicit user theme can still be applied immediately.
+		this.activeThemeName = configuredTheme === undefined ? SYSTEM_THEME_NAME : this.resolveThemeName();
 		markTerminalColorsPending();
 		initTheme(this.activeThemeName, true);
 		this.bindTerminalColorSchemeListener();
@@ -102,10 +104,14 @@ export class InteractiveThemeController {
 	 * Theme pairs and the system theme follow terminal appearance changes.
 	 */
 	applyFromSettings(): void {
-		const themeSetting = this.getThemeSetting() ?? DEFAULT_THEME_SETTING;
-		const themeName = this.resolveThemeName();
+		const configuredTheme = this.getThemeSetting();
+		const themeSetting = configuredTheme ?? DEFAULT_THEME_SETTING;
+		const themeName =
+			configuredTheme === undefined && this.terminalColors === undefined
+				? SYSTEM_THEME_NAME
+				: this.resolveThemeName();
 		this.setAutoSync(parseAutoThemeSetting(themeSetting) !== undefined || themeName === SYSTEM_THEME_NAME);
-		this.applyThemeName(themeName, themeSetting !== DEFAULT_THEME_SETTING);
+		this.applyThemeName(themeName, configuredTheme !== undefined);
 		this.queryTerminalColors();
 	}
 
@@ -219,7 +225,15 @@ export class InteractiveThemeController {
 	 */
 	private reapplyForTerminal(): void {
 		if (this.activeThemeName === "<in-memory>") return;
-		const themeName = this.resolveThemeName();
+		const hasReportedColors =
+			this.terminalColors?.foreground !== undefined ||
+			this.terminalColors?.background !== undefined ||
+			this.terminalColors?.palette !== undefined;
+		// A timeout produces an empty color report. Keep the system theme in that
+		// case so it can fall back to ANSI palette indices; switch the default
+		// light/dark pair only after the terminal provides usable color data.
+		const themeName =
+			this.getThemeSetting() === undefined && !hasReportedColors ? SYSTEM_THEME_NAME : this.resolveThemeName();
 		if (themeName === SYSTEM_THEME_NAME || themeName !== this.activeThemeName) {
 			this.applyThemeName(themeName);
 		}

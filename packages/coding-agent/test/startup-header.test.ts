@@ -62,6 +62,7 @@ describe("StartupHeader", () => {
 		expect(text).toContain("▸ Prompts (1)");
 		expect(text).toContain("▸ Extensions (1)");
 		expect(text).not.toContain("lark-doc, lark-task");
+		expect(text).toContain("Press Ctrl+O to show full startup help.");
 		expect(text).not.toContain("Interactive workspace");
 		expect(text).toContain("header-test");
 		const skillsRow = lines.find((line) => stripAnsi(line).includes("▸ Skills (2)"));
@@ -95,7 +96,7 @@ describe("StartupHeader", () => {
 		const header = createHeader();
 		const collapsed = stripAnsi(header.render(80).join("\n"));
 		expect(collapsed).toContain("▸ Skills (2)");
-		expect(collapsed).not.toContain("show full startup help");
+		expect(collapsed).toContain("show full startup help");
 		expect(collapsed).not.toContain("lark-doc, lark-task");
 
 		header.setExpanded(true);
