@@ -324,18 +324,25 @@ function applyModelsJson(
 		);
 	}
 
-	const models: AnyModel[] = baseModels.map((model) => {
-		const baseUrl = config.oauth === "radius" ? model.baseUrl : (config.baseUrl ?? model.baseUrl);
-		if (isModelType(model, "chat")) return { ...model, baseUrl, compat: mergeCompat(model.compat, config.compat) };
-		// Classifier APIs read their own compat fields, such as how a System One service takes images.
-		if (isModelType(model, "classifier") && config.compat) {
-			return { ...model, baseUrl, compat: { ...model.compat, ...config.compat } };
-		}
-		return { ...model, baseUrl };
-	});
+	// A non-empty models list is an explicit catalog. Do not leak bundled models into
+	// a user-configured provider; definitions may still inherit transport defaults from
+	// the bundled catalog below.
+	const models: AnyModel[] = config.models?.length
+		? []
+		: baseModels.map((model) => {
+				const baseUrl = config.oauth === "radius" ? model.baseUrl : (config.baseUrl ?? model.baseUrl);
+				if (isModelType(model, "chat")) {
+					return { ...model, baseUrl, compat: mergeCompat(model.compat, config.compat) };
+				}
+				// Classifier APIs read their own compat fields, such as how a System One service takes images.
+				if (isModelType(model, "classifier") && config.compat) {
+					return { ...model, baseUrl, compat: { ...model.compat, ...config.compat } };
+				}
+				return { ...model, baseUrl };
+			});
 	for (const definition of config.models ?? []) {
 		const existingIndex = models.findIndex((model) => isModelType(model, "chat") && model.id === definition.id);
-		const defaults = findModelDefaults(models, definition.id, definition.api ?? config.api);
+		const defaults = findModelDefaults(baseModels, definition.id, definition.api ?? config.api);
 		const model = modelFromJson(providerId, definition, config, defaults);
 		if (existingIndex >= 0) models[existingIndex] = model;
 		else models.push(model);

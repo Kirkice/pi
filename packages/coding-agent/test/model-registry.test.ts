@@ -187,11 +187,11 @@ describe("ModelRegistry", () => {
 			expect(googleModels[0].baseUrl).not.toBe("https://my-proxy.example.com/v1");
 		});
 
-		test("can mix baseUrl override and models merge", async () => {
+		test("can mix a baseUrl override and configured model catalog", async () => {
 			writeRawModelsJson({
 				// baseUrl-only for anthropic
 				anthropic: overrideConfig("https://anthropic-proxy.example.com/v1"),
-				// Add custom model for google (merged with built-ins)
+				// Configure a custom model catalog for google.
 				google: providerConfig(
 					"https://google-proxy.example.com/v1",
 					[{ id: "gemini-custom" }],
@@ -206,10 +206,9 @@ describe("ModelRegistry", () => {
 			expect(anthropicModels.length).toBeGreaterThan(1);
 			expect(anthropicModels[0].baseUrl).toBe("https://anthropic-proxy.example.com/v1");
 
-			// Google: built-ins plus custom model
+			// Google: only the explicitly configured catalog.
 			const googleModels = getModelsForProvider(registry, "google");
-			expect(googleModels.length).toBeGreaterThan(1);
-			expect(googleModels.some((m) => m.id === "gemini-custom")).toBe(true);
+			expect(googleModels.map((model) => model.id)).toEqual(["gemini-custom"]);
 		});
 
 		test("refresh() picks up baseUrl override changes", async () => {
@@ -230,7 +229,7 @@ describe("ModelRegistry", () => {
 		});
 	});
 
-	describe("custom models merge behavior", () => {
+	describe("custom model catalog behavior", () => {
 		test("built-in provider custom models inherit api and baseUrl without explicit fields", async () => {
 			// Built-in providers already have api/baseUrl on every model, and auth
 			// comes from env vars / auth storage. No need to specify them.
@@ -250,6 +249,9 @@ describe("ModelRegistry", () => {
 			const registry = await createModelRegistry(authStorage, modelsJsonPath);
 			expect(registry.getError()).toBeUndefined();
 
+			expect(getModelsForProvider(registry, "openrouter").map((model) => model.id)).toEqual([
+				"fake-provider/fake-model",
+			]);
 			const model = registry.find("openrouter", "fake-provider/fake-model");
 			expect(model).toBeDefined();
 			expect(model?.api).toBe("openai-completions");
@@ -288,7 +290,7 @@ describe("ModelRegistry", () => {
 			expect(error).toContain('Provider "broken-two"');
 		});
 
-		test("custom provider with same name as built-in merges with built-in models", async () => {
+		test("custom models replace the built-in catalog for the configured provider", async () => {
 			writeModelsJson({
 				anthropic: providerConfig("https://my-proxy.example.com/v1", [{ id: "claude-custom" }]),
 			});
@@ -296,9 +298,7 @@ describe("ModelRegistry", () => {
 			const registry = await createModelRegistry(authStorage, modelsJsonPath);
 			const anthropicModels = getModelsForProvider(registry, "anthropic");
 
-			expect(anthropicModels.length).toBeGreaterThan(1);
-			expect(anthropicModels.some((m) => m.id === "claude-custom")).toBe(true);
-			expect(anthropicModels.some((m) => m.id.includes("claude"))).toBe(true);
+			expect(anthropicModels.map((model) => model.id)).toEqual(["claude-custom"]);
 		});
 
 		test("custom model with same id replaces built-in model by id", async () => {
@@ -329,7 +329,7 @@ describe("ModelRegistry", () => {
 			expect(getModelsForProvider(registry, "openai").length).toBeGreaterThan(0);
 		});
 
-		test("provider-level baseUrl applies to both built-in and custom models", async () => {
+		test("provider-level baseUrl applies to the configured model catalog", async () => {
 			writeModelsJson({
 				anthropic: providerConfig("https://merged-proxy.example.com/v1", [{ id: "claude-custom" }]),
 			});
@@ -337,9 +337,8 @@ describe("ModelRegistry", () => {
 			const registry = await createModelRegistry(authStorage, modelsJsonPath);
 			const anthropicModels = getModelsForProvider(registry, "anthropic");
 
-			for (const model of anthropicModels) {
-				expect(model.baseUrl).toBe("https://merged-proxy.example.com/v1");
-			}
+			expect(anthropicModels.map((model) => model.id)).toEqual(["claude-custom"]);
+			expect(anthropicModels[0]?.baseUrl).toBe("https://merged-proxy.example.com/v1");
 		});
 
 		test("provider-level compat applies to custom models", async () => {
@@ -633,8 +632,8 @@ describe("ModelRegistry", () => {
 						},
 					],
 					modelOverrides: {
-						"anthropic/claude-sonnet-4.5": {
-							name: "Overridden Built-in Sonnet",
+						"custom/openrouter-model": {
+							name: "Overridden Custom Model",
 						},
 					},
 				},
@@ -644,12 +643,11 @@ describe("ModelRegistry", () => {
 			const models = getModelsForProvider(registry, "openrouter");
 
 			expect(models.some((m) => m.id === "custom/openrouter-model")).toBe(true);
-			expect(
-				models.some((m) => m.id === "anthropic/claude-sonnet-4.5" && m.name === "Overridden Built-in Sonnet"),
-			).toBe(true);
+			expect(models).toHaveLength(1);
+			expect(models[0]?.name).toBe("Overridden Custom Model");
 		});
 
-		test("refresh() reloads merged custom models from disk", async () => {
+		test("refresh() reloads configured model catalogs from disk", async () => {
 			writeModelsJson({
 				anthropic: providerConfig("https://first-proxy.example.com/v1", [{ id: "claude-custom" }]),
 			});
@@ -664,8 +662,7 @@ describe("ModelRegistry", () => {
 
 			const anthropicModels = getModelsForProvider(registry, "anthropic");
 			expect(anthropicModels.some((m) => m.id === "claude-custom")).toBe(false);
-			expect(anthropicModels.some((m) => m.id === "claude-custom-2")).toBe(true);
-			expect(anthropicModels.some((m) => m.id.includes("claude"))).toBe(true);
+			expect(anthropicModels.map((model) => model.id)).toEqual(["claude-custom-2"]);
 		});
 
 		test("removing custom models from models.json keeps built-in provider models", async () => {
